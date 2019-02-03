@@ -4,6 +4,8 @@
 
 #include "TSearch.h"
 
+// Parameters
+TVector<int> TempVec = {1,1};
 
 // A simple 2D inverted quadratic evaluation function
 
@@ -25,10 +27,12 @@ int main (int argc, const char* argv[]) {
   s.SetEvaluationFunction(Evaluate);
   s.SetSelectionMode(RANK_BASED);
   s.SetReproductionMode(HILL_CLIMBING);
-  s.SetPopulationSize(1000);
-  s.SetMaxGenerations(250);
+  s.SetPopulationSize(5);//1000
+  s.SetMaxGenerations(20);
   s.SetMutationVariance(0.1);
   s.SetCrossoverProbability(0.5);
+  //SVM: attempting to group points.
+  s.SetCrossoverPoints( TempVec );
   s.SetCrossoverMode(TWO_POINT);
   s.SetMaxExpectedOffspring(1.1);
   s.SetElitistFraction(0.1);
