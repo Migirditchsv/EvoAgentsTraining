@@ -32,7 +32,8 @@ int main (int argc, const char* argv[]) {
   s.SetMutationVariance(0.1);
   s.SetCrossoverProbability(0.5);
   //SVM: attempting to group points.
-  s.SetCrossoverPoints( TempVec );
+  //s.SetCrossoverPoints( TempVec );
+  s.SetCrossoverTemplate( TempVec );
   s.SetCrossoverMode(TWO_POINT);
   s.SetMaxExpectedOffspring(1.1);
   s.SetElitistFraction(0.1);
