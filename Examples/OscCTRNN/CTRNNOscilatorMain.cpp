@@ -25,9 +25,33 @@ const double POPULATION_SIZE = 50;
 const int    MAX_GENERATIONS = 200; 
 const double VARIANCE        = 0.1;
 
-// Global objects oh wow these are probably a bad idea
+// Global objects ehhhhh???
 CTRNN c(2);
 
+// Evaluaiton function should maximize output for oscilitory behavior
+double EvalFxn(double N1TS[], double N2TS[])
+{
+    double theta[STEP_NUM];
+    double radius[STEP_NUM];
+    double SumOmega;
+    double SumDRadius;
+
+    // Try looking for phase sync between N1 and N2 using the simple but nice
+    // measure from Lahav 2018.
+    theta[0] = atan( N1TS[0] / N2TS[0] );
+    radius[0]= sqrt( pow(N1TS[0],2) + pow(N2TS[0],2) );
+    for(int ti=0; ti<STEP_NUM; ti += 1)
+    {
+        theta[ti] = atan( N1TS[ti] / N2TS[ti] );
+        radius[ti]= sqrt( pow(N1TS[ti],2) + pow(N2TS[ti],2) );
+        // compute deltas
+       SumOmega += theta[ti]-theta[ti-1];
+       SumDRadius += abs( radius[ti]-radius[ti-1] );
+    }
+    return( abs( SumOmega ) / SumDRadius );
+}
+
+// Use EvalFxn to evaluate the individual 
 double Evaluate(TVector<double> &v, RandomState &)
 {
     // Warm up
@@ -68,7 +92,7 @@ double Evaluate(TVector<double> &v, RandomState &)
         TimeIndex += 1;
         c.EulerStep(STEP_SIZE);
         //cout<<"Step complete."<<endl;
-        if( fmod(time, 1000*STEP_SIZE ) ==0 )
+        if( fmod(time, 10000*STEP_SIZE ) ==0 )
             {
             cout<<time<<" "<<c.NeuronOutput(1)<<" "<<c.NeuronOutput(2)<< endl;
             }
@@ -76,7 +100,7 @@ double Evaluate(TVector<double> &v, RandomState &)
         N2TimeSeries[TimeIndex] = c.NeuronOutput(2);
     }
     // For now evaluate on a simple objective: maximize N1 while mining N2
-    double evaluation = abs(N1TimeSeries[100]/N2TimeSeries[100]);
+    double evaluation = EvalFxn( N1TimeSeries, N2TimeSeries );
     return( evaluation );
 }
 
@@ -115,13 +139,17 @@ int main (int argc, const char* argv[]) {
   // Time loop
   c.RandomizeCircuitState(-0.5,0.5);
   cout<<c.NeuronOutput(1)<<" "<<c.NeuronOutput(2)<<endl;
+  system("rm ./data.txt");
   ofstream dataFile;
   dataFile.open("data.txt");
-  for (double time =0.0; time <= RUN_DURATION; time+=STEP_SIZE) 
-  {
-      c.EulerStep(STEP_SIZE);
-      cout<<c.NeuronOutput(1)<<","<<c.NeuronOutput(2)<<endl;
-      dataFile <<c.NeuronOutput(1)<<","<<c.NeuronOutput(2)<<"\n"; 
-  }
+  //for (double time =0.0; time <= RUN_DURATION; time+=STEP_SIZE) 
+  //{
+  //    c.EulerStep(STEP_SIZE);
+  //    cout<<c.NeuronOutput(1)<<","<<c.NeuronOutput(2)<<endl;
+  //    dataFile <<c.NeuronOutput(1)<<","<<c.NeuronOutput(2)<<"\n"; 
+  //}
+  dataFile.close();
+  // Plot it w/ python
+  system("python plotter.py");
   return 0;
 }
