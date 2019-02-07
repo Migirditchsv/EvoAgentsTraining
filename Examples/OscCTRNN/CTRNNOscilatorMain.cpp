@@ -9,6 +9,7 @@
 // ***************************************
 
 #include "CTRNN.h"
+#include "random.h"
 #include "TSearch.h"
 #include <math.h>
 
@@ -23,6 +24,8 @@
 #define MAX_GENERATIONS  200 
 #define VARIANCE         0.1
 
+// Globals oh wow these are probably a bad idea
+CTRNN c(2);
 
 double Evaluate(TVector<double> &v, RandomState &)
 {
@@ -31,8 +34,7 @@ double Evaluate(TVector<double> &v, RandomState &)
     double N2TimeSeries[RUN_DURATION];
     int    TimeIndex = 0;
     // Set up the circuit
-    CTRNN c(2);
-    c.SetConnectionWeight(1, 1, v[1]);
+        c.SetConnectionWeight(1, 1, v[1]);
     c.SetConnectionWeight(1, 2, v[2]);
     c.SetConnectionWeight(2, 1, v[3]);
     c.SetConnectionWeight(2, 2, v[4]);
@@ -99,10 +101,11 @@ int main (int argc, const char* argv[]) {
   cout<<c.NeuronOutput(1)<<" "<<c.NeuronOutput(2)<<endl;
   ofstream dataFile;
   dataFile.open("data.txt");
-  for (double time =0.0; time <= runTime; time+=stepSize) {
-      c.EulerStep(stepSize);
+  for (double time =0.0; time <= RUN_DURATION; time+=STEP_SIZE) 
+  {
+      c.EulerStep(STEP_SIZE);
       cout<<c.NeuronOutput(1)<<","<<c.NeuronOutput(2)<<endl;
       dataFile <<c.NeuronOutput(1)<<","<<c.NeuronOutput(2)<<"\n"; 
-
+  }
   return 0;
 }
