@@ -9,7 +9,7 @@ TVector<int> TempVec = {1,1};
 
 // A simple 2D inverted quadratic evaluation function
 
-double Evaluate(TVector<double> &v, RandomState &)
+double Evaluate(TVector<double> &v)
 {
 	double p1 = MapSearchParameter(v[1],-10,10), 
            p2 = MapSearchParameter(v[2],-10,10);
