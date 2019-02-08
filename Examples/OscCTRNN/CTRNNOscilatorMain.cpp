@@ -17,13 +17,14 @@
 // Control Pannel
 // Neuronal controls
 const double NEURON_GAIN     = 0.0;
+const int    TRANSIENT_STEPS = 50;
 const int    RUN_DURATION    = 250; // be reasonable now, make sure these divide nice
 const double STEP_SIZE       = 0.01;
 const int    STEP_NUM        = ceil(1+ (RUN_DURATION / STEP_SIZE) );
 // Search controls
-const double POPULATION_SIZE = 50;
-const int    MAX_GENERATIONS = 200; 
-const double VARIANCE        = 0.1;
+const double POPULATION_SIZE = 70;
+const int    MAX_GENERATIONS = 40; 
+const double VARIANCE        = 0.25;
 
 // Global objects ehhhhh???
 CTRNN c(2);
@@ -31,25 +32,31 @@ CTRNN c(2);
 // Evaluaiton function should maximize output for oscilitory behavior
 double EvalFxn(double N1TS[], double N2TS[])
 {
-    double theta[STEP_NUM];
-    double radius[STEP_NUM];
-    double SumOmega;
-    double SumDRadius;
-
-    // Try looking for phase sync between N1 and N2 using the simple but nice
-    // measure from Lahav 2018.
+    double theta[ (int) STEP_NUM-TRANSIENT_STEPS];
+    double radius[ (int) STEP_NUM-TRANSIENT_STEPS];
+    double MeanN1 = 0.0;
+    double MeanN2 = 0.0;
+    double SumOmega = 0.0;
+    double SumDRadius = 0.0;
+    int    dt = min(30, TRANSIENT_STEPS);
+    // Look for wiggly elipses.  
     theta[0] = atan( N1TS[0] / N2TS[0] );
     radius[0]= sqrt( pow(N1TS[0],2) + pow(N2TS[0],2) );
-    for(int ti=0; ti<STEP_NUM; ti += 1)
+    for(int ti=TRANSIENT_STEPS; ti<STEP_NUM; ti += 1)
     {
+        cout<<"N1[ti="<<ti<<"]="<<N1TS[ti]<<endl;//DEBUG
         theta[ti] = atan( N1TS[ti] / N2TS[ti] );
-        radius[ti]= sqrt( pow(N1TS[ti],2) + pow(N2TS[ti],2) );
-        // compute deltas
-       SumOmega += theta[ti]-theta[ti-1];
-       SumDRadius += abs( radius[ti]-radius[ti-1] );
+        //radius[ti]= sqrt( pow(N1TS[ti],2) + pow(N2TS[ti],2) );
+        // compute dependants
+        MeanN1 += N1TS[ti]; // //N1TS[ti];
+        MeanN2 += N2TS[ti];
+        SumOmega += theta[ti]-theta[ti-dt];//prefers CCW rotation but ok. 
+        SumDRadius += abs( radius[ti]-radius[ti-dt] );
     }
-    return( abs( SumOmega ) / SumDRadius );
-}
+    //build final value
+    double MeanRad = sqrt(pow(MeanN1/STEP_NUM,2) + pow(MeanN2/STEP_NUM,2)) ;
+    
+    return( MeanRad*SumOmega/SumDRadius );}
 
 // Use EvalFxn to evaluate the individual 
 double Evaluate(TVector<double> &v, RandomState &)
@@ -82,24 +89,22 @@ double Evaluate(TVector<double> &v, RandomState &)
     c.SetNeuronGain( 2, g2 );
 
 
-    // Run the circuit
+    // Initialize the circuit
     c.RandomizeCircuitState(-0.5,0.5);
     N1TimeSeries[0] = c.NeuronOutput(1);
     N2TimeSeries[0] = c.NeuronOutput(2);
-    cout << "Simulating Network" << endl;
     for (double time = STEP_SIZE; time <= RUN_DURATION; time += STEP_SIZE) {
-        //cout<<"Attempting step to time:"<<time<<endl;
         TimeIndex += 1;
         c.EulerStep(STEP_SIZE);
-        //cout<<"Step complete."<<endl;
-        if( fmod(time, 10000*STEP_SIZE ) ==0 )
-            {
-            cout<<time<<" "<<c.NeuronOutput(1)<<" "<<c.NeuronOutput(2)<< endl;
-            }
+        
+//        if( fmod(time, 10000*STEP_SIZE ) ==0 )
+//            {
+//            cout<<time<<" "<<c.NeuronOutput(1)<<" "<<c.NeuronOutput(2)<< endl;
+//            }
         N1TimeSeries[TimeIndex] = c.NeuronOutput(1);
         N2TimeSeries[TimeIndex] = c.NeuronOutput(2);
     }
-    // For now evaluate on a simple objective: maximize N1 while mining N2
+    // evaluate  fittness 
     double evaluation = EvalFxn( N1TimeSeries, N2TimeSeries );
     return( evaluation );
 }
@@ -114,9 +119,9 @@ int main (int argc, const char* argv[]) {
   s.SetEvaluationFunction(Evaluate);
   s.SetSelectionMode(RANK_BASED);
   s.SetReproductionMode(HILL_CLIMBING);
-  s.SetPopulationSize(5);//1000
-  s.SetMaxGenerations(20);
-  s.SetMutationVariance(0.1);
+  s.SetPopulationSize(POPULATION_SIZE);
+  s.SetMaxGenerations(MAX_GENERATIONS);
+  s.SetMutationVariance(VARIANCE);
   s.SetCrossoverProbability(0.5);
   //SVM: attempting to group points.
   //s.SetCrossoverPoints( TempVec );
@@ -131,23 +136,14 @@ int main (int argc, const char* argv[]) {
   s.ExecuteSearch();
 
   // Write out best indivudual simulation
-
-
-  // Display the best individual found
-  cout<<"Best Individual Performance:"<<s.BestPerformance()<<endl;
-
-  // Time loop
-  c.RandomizeCircuitState(-0.5,0.5);
-  cout<<c.NeuronOutput(1)<<" "<<c.NeuronOutput(2)<<endl;
   system("rm ./data.txt");
   ofstream dataFile;
   dataFile.open("data.txt");
-  //for (double time =0.0; time <= RUN_DURATION; time+=STEP_SIZE) 
-  //{
-  //    c.EulerStep(STEP_SIZE);
-  //    cout<<c.NeuronOutput(1)<<","<<c.NeuronOutput(2)<<endl;
-  //    dataFile <<c.NeuronOutput(1)<<","<<c.NeuronOutput(2)<<"\n"; 
-  //}
+  for (double time =0.0; time <= RUN_DURATION; time+=STEP_SIZE) 
+  {
+      c.EulerStep(STEP_SIZE);
+      dataFile <<c.NeuronOutput(1)<<","<<c.NeuronOutput(2)<<"\n"; 
+  }
   dataFile.close();
   // Plot it w/ python
   system("python plotter.py");
