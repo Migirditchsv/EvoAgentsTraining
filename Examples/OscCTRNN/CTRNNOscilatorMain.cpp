@@ -17,8 +17,8 @@
 // Control Pannel
 // Neuronal controls
 const double NEURON_GAIN     = 0.0;
-const int    TRANSIENT_STEPS = 2000;
-const int    RUN_DURATION    = 250; // be reasonable now, make sure these divide nice
+const int    TRANSIENT_STEPS = 5000;
+const int    RUN_DURATION    = 250; // be reasonable now, make sure these divide
 const double STEP_SIZE       = 0.01;
 const int    STEP_NUM        = ceil(1+ (RUN_DURATION / STEP_SIZE) );
 // Search controls
@@ -81,19 +81,24 @@ double EvalFxn(double N1TS[], double N2TS[])
     double SumOmega = 0.0;
     double SumDRadius = 0.0;
     int    dt = min(30, TRANSIENT_STEPS);
+    double DRadius = 0.0;
+    
     // Look for wiggly elipses.  
     theta[0] = atan( N1TS[0] / N2TS[0] );
     radius[0]= sqrt( pow(N1TS[0],2) + pow(N2TS[0],2) );
     for(int ti=TRANSIENT_STEPS; ti<STEP_NUM; ti += 1)
     {
 //        cout<<"N1[ti="<<ti<<"]="<<N1TS[ti]<<endl;//DEBUG
-        theta[ti] =0.0; //atan( N1TS[ti] / N2TS[ti] );
+        theta[ti] = atan( N1TS[ti] / N2TS[ti] );
         //radius[ti]= sqrt( pow(N1TS[ti],2) + pow(N2TS[ti],2) );
         // compute dependants
         MeanN1 += N1TS[ti]; // //N1TS[ti];
         MeanN2 += N2TS[ti];
-        SumOmega += sqrt( pow(N1TS[ti] - N1TS[ti-dt],2) +  pow(N2TS[ti] - N2TS[ti-dt],2) ); //theta[ti]-theta[ti-dt];//prefers CCW rotation but ok. 
-        SumDRadius += abs( radius[ti]-radius[ti-dt] );
+        SumOmega += theta[ti]-theta[ti-dt];//prefers CCW rotation but ok. 
+//SumOmega += sqrt( pow(N1TS[ti] - N1TS[ti-dt],2) +  pow(N2TS[ti] - N2TS[ti-dt],2) );
+        DRadius += abs( radius[ti]-radius[ti-dt] );
+        SumDRadius += DRadius;
+
     }
     //build final value
     double MeanRad = sqrt(pow(MeanN1/STEP_NUM,2) + pow(MeanN2/STEP_NUM,2)) ;
