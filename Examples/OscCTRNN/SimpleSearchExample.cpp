@@ -11,7 +11,7 @@ TVector<int> TempVec = {1,1};
 
 double Evaluate(TVector<double> &v)
 {
-	double p1 = MapSearchParameter(v[1],-10,10), 
+	double p1 = MapSearchParameter(v[1],-10,10),
            p2 = MapSearchParameter(v[2],-10,10);
 	return 200-(p1*p1+p2*p2);
 }
