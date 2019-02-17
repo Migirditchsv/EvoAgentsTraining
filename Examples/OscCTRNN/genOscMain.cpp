@@ -109,17 +109,19 @@ double metric(double* N1, double* N2)
         if(abs(N2[t])>maxVal){maxVal=N2[t];}
     }
     offset = ceil(maxVal);
-    int boardSize = pow( 2 * offset, 2 );
+    
+    double inverseGridWidth = (double) BOX_RES / (double)(2.0*offset);
+    int boardSize = pow( BOX_RES , 2 );
 
     //Declare state space array
     int* boxScore[boardSize];
    
     // N# values in [-1,1], scale to boxnum then floor
-    for (int t =TRANSIENT_STEPS; t < STEP_NUM; t+=1) 
+    for (int t=TRANSIENT_STEPS; t<STEP_NUM; t+=1) 
     {
        // Discretize on axis
-        L1 = round( N1[t] + maxVal );
-        L2 = round( N2[t] + maxVal );
+        L1 = floor( ( N1[t] + maxVal ) / inverseGridWidth );
+        L2 = floor( ( N2[t] + maxVal ) / inverseGridWidth );
         
         // raster index bottom left is 0 top right is (boxnum-1)^2 
         boxIndx = offset*L1 + L2;
