@@ -86,13 +86,9 @@ void WriteOut(TVector<double> &v)
     ofstream dataFile;
     dataFile.open("data.txt");
     //Write loop
-    for (int t =0; t <= STEP_NUM; t+=1) 
+    for (int t =0; t < STEP_NUM; t+=1) 
     {
-        if(t%1000==0)
-        { 
-            cout<<"checking time t="<<t<<" N1="<<N1[t]<<", N2="<<N2[t]<<endl;
-        }
-        dataFile <<N1[t]<<","<<N2[t]<<endl;
+        dataFile<<N1[t]<<","<<N2[t]<<endl;
     }
     //Always close out!
     dataFile.close();
@@ -106,43 +102,33 @@ double metric(double* N1, double* N2)
     double maxVal = 0.0;
     int offset = 0;
     
-    // Find shift to corner on origin
-    for (int t =TRANSIENT_STEPS; t <= STEP_NUM; t+=1)
+    // Find shift so bottom left corner on origin
+    for (int t =TRANSIENT_STEPS; t < STEP_NUM; t+=1)
     {
         if(abs(N1[t])>maxVal){maxVal=N1[t];}
         if(abs(N2[t])>maxVal){maxVal=N2[t];}
     }
     offset = ceil(maxVal);
-    //cout<<"offset"<<offset<<endl;
+    int boardSize = pow( 2 * offset, 2 );
 
     //Declare state space array
-    int* boxScore[2*offset*2*offset+1];
+    int* boxScore[boardSize];
    
     // N# values in [-1,1], scale to boxnum then floor
-    for (int t =TRANSIENT_STEPS; t <= STEP_NUM; t+=1) 
+    for (int t =TRANSIENT_STEPS; t < STEP_NUM; t+=1) 
     {
-       // cout<<"Computing Metric Values for Time t="<<t<<endl;
-       // cout<<"N1[t="<<t<<"]="<<N1[t]<<endl;
-       // cout<<"N2[t="<<t<<"]="<<N2[t]<<endl;
-       // cout<<"BOX_RES="<<BOX_RES<<endl;
        // Discretize on axis
         L1 = round( N1[t] + maxVal );
         L2 = round( N2[t] + maxVal );
-        //cout<<"L1="<<L1<<endl;
-        //cout<<"L2="<<L2<<endl;
         
-        // raster index bottom left is 0 top right is (boxnum-1)^2
-        //boxIndx = BOX_RES *min(BOX_RES, L1) + min(BOX_RES, L2);
+        // raster index bottom left is 0 top right is (boxnum-1)^2 
         boxIndx = offset*L1 + L2;
-        //cout<<"Index:"<<boxIndx<<"/"<<2*offset*2*offset+1<<endl;
 
         // Check if new box, ifso tally, and update visited boxes
-        //cout<<"checking box indx"<<endl;
         if(boxScore[boxIndx]==0){boardScore++;}
-        //cout<<"incrementing box"<<endl;
         boxScore[boxIndx]+=1;
-        //cout<<"box score"<<boxScore[boxIndx]<<endl;
     }
+    // Exit returning score
     return(boardScore);
 }
 
@@ -191,7 +177,7 @@ int main()
     s.SetReproductionMode(HILL_CLIMBING);
     s.SetPopulationSize(100);
     s.SetMaxGenerations(40);
-    s.SetMutationVariance(0.1);
+    s.SetMutationVariance(VARIANCE);
     s.SetCrossoverProbability(0.0);
     //SVM: attempting to group points 
     //s.SetCrossoverTemplate( TempVec );
@@ -209,5 +195,10 @@ int main()
     // writeout best individual
     WriteOut(s.BestIndividual());
     cout<<"Best Individual Written to File"<<endl;
+
+    // Plot results w/ Python plotter.py
+    // Plot it w/ python
+  system("python plotter.py");
+
     return(0);
 }
