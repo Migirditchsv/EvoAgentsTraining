@@ -25,9 +25,9 @@ const int    RUN_DURATION    = 250; // make sure these divide
 const double STEP_SIZE       = 0.01;
 const int    STEP_NUM        = ceil(1+ (RUN_DURATION / STEP_SIZE) );
 // Search controls
-const double POPULATION_SIZE = 100;
-const int    MAX_GENERATIONS = 80; 
-const double VARIANCE        = 0.35;
+const double POPULATION_SIZE = 10;
+const int    MAX_GENERATIONS = 10; 
+const double VARIANCE        = 0.45;
 // Metric controls
 const int BOX_RES            = 10;
 
@@ -177,9 +177,9 @@ int main()
     s.SetEvaluationFunction(Evaluate);
     s.SetSelectionMode(RANK_BASED);
     s.SetReproductionMode(HILL_CLIMBING);
-    s.SetPopulationSize(100);
-    s.SetMaxGenerations(40);
-    s.SetMutationVariance(VARIANCE);
+    s.SetPopulationSize( POPULATION_SIZE );
+    s.SetMaxGenerations( MAX_GENERATIONS );
+    s.SetMutationVariance( VARIANCE );
     s.SetCrossoverProbability(0.0);
     //SVM: attempting to group points 
     //s.SetCrossoverTemplate( TempVec );
