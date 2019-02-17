@@ -15,9 +15,9 @@
 #include <math.h> // eval()
 #include <fstream> // output()
 
-//*********************************************************************************
+//*****************************************************************************
 // Control Pannel 
-//*********************************************************************************
+//*****************************************************************************
 
 // Neuronal controls
 const int    TRANSIENT_STEPS = 5000;
@@ -25,17 +25,18 @@ const int    RUN_DURATION    = 250; // make sure these divide
 const double STEP_SIZE       = 0.01;
 const int    STEP_NUM        = ceil(1+ (RUN_DURATION / STEP_SIZE) );
 // Search controls
-const double POPULATION_SIZE = 10;
-const int    MAX_GENERATIONS = 10; 
-const double VARIANCE        = 0.45;
+const double POPULATION_SIZE = 500;
+const int    MAX_GENERATIONS = 100; 
+const double VARIANCE        = 0.15;
+const double TERM_LIMIT      = 0.45;
 // Metric controls
 const int BOX_RES            = 10;
 
 
 
-//*********************************************************************************
+//*****************************************************************************
 // Support  Functions
-//*********************************************************************************
+//*****************************************************************************
 
 // Simulate CTRNN
 void simulate(TVector<double> &v, double* N1TS, double* N2TS)
@@ -44,9 +45,9 @@ void simulate(TVector<double> &v, double* N1TS, double* N2TS)
     CTRNN c(2);
 
     double w11 = MapSearchParameter( v[1],-10,10);
-    double w12 = -1; //MapSearchParameter( v[2], -10,10);
-    double w21 =  1; //MapSearchParameter( v[2], -10,10);
-    double w22 =  4.5; //MapSearchParameter( v[2], -10,10);
+    double w12 = MapSearchParameter( v[2], -10,10);
+    double w21 = MapSearchParameter( v[2], -10,10);
+    double w22 = 4.5; //MapSearchParameter( v[2], -10,10);
     double b1  =  -2.75; //MapSearchParameter( v[2], -10,10);
     double b2  =  -1.75; //MapSearchParameter( v[2], -10,10);
   //double g1  =  //MapSearchParameter( v[2], -10,10);
@@ -70,6 +71,16 @@ void simulate(TVector<double> &v, double* N1TS, double* N2TS)
         N2TS[t] = c.NeuronState(2);
     }
  }  
+
+// Terminate if good
+int terminator(int generation,
+               double bestPerf,
+               double avgPerf,
+               double perfVar)
+{
+    int condition = bestPerf > TERM_LIMIT * BOX_RES * BOX_RES;
+    return( condition );
+}
 
 // Write out an individual
 void WriteOut(TVector<double> &v)
@@ -163,16 +174,16 @@ int main()
 {
     // Init static neuron properites
     CTRNN c(2);
-    //c.SetNeuronBias(1, -2.75);
+    c.SetNeuronBias(1, -2.75);
     c.SetNeuronBias(2, -1.75);
-    c.SetConnectionWeight(1, 1, 4.5);
-    c.SetConnectionWeight(1, 2, -1);
-    c.SetConnectionWeight(2, 1, 1);
-    c.SetConnectionWeight(2, 2, 4.5);
+    //c.SetConnectionWeight(1, 1, 4.5);
+    //c.SetConnectionWeight(1, 2, -1);
+    //c.SetConnectionWeight(2, 1, 1);
+    //c.SetConnectionWeight(2, 2, 4.5);
     cout<<"Brain Initialized"<<endl;
 
     // Configure the search
-    TSearch s(1);
+    TSearch s(3);
     s.SetRandomSeed(87635455);
     s.SetEvaluationFunction(Evaluate);
     s.SetSelectionMode(RANK_BASED);
@@ -188,6 +199,7 @@ int main()
     s.SetElitistFraction(0.1);
     s.SetSearchConstraint(1);
     //s.SetCheckpointInterval(5);
+    s.SetSearchTerminationFunction(terminator);
     cout<<"Search Parameters Set"<<endl;
     
     // Run the search
