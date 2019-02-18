@@ -30,7 +30,7 @@ const int    MAX_GENERATIONS = 20;
 const double VARIANCE        = 0.15;
 const double TERM_LIMIT      = 0.40;
 // Metric controls
-const int BOX_RES            = 10;
+const int BOX_RES            = 100;
 
 
 
